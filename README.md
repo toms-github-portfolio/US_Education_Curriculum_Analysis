@@ -1,2 +1,154 @@
 # US_Education_Curriculum_Analysis
 A project providing evidence on how Big Data Analytics be used to provide insight into curriculum superiority  and reformation amongst the nationally scoring US States.
+
+---
+title: "US EDUCATION EFFICIENCY ANALYSIS"
+output: html_notebook
+---
+
+# Install Packages
+```{r}
+#install.packages("tidyverse")
+#install.packages("psych")
+```
+
+# Library Packages
+```{r}
+#library(tidyverse)
+#library(readr)
+#library(dplyr)
+#library(scales)
+#library(ggplot2)
+#library(psych)
+```
+
+# Read dataset
+```{r}
+#Choose the CSV file interactively
+#file_path <- file.choose()
+
+#Read the CSV file into R
+US_Scores <- read.csv(file_path)
+
+head(US_Scores)
+```
+
+# Create a summary of the dataset to view all columns and components
+```{r}
+summary(US_Scores)
+```
+
+# Create a subset of various states for analysis
+```{r}
+# The states chosen for this subset are from various regions of the country
+
+Five_State_Scores <- subset(US_Scores,State.Name == "North Dakota" |
+                                      State.Name == "California" |
+                                      State.Name == "Florida" | 
+                                      State.Name == "Texas" |
+                                      State.Name == "New York")
+Five_State_Scores
+```
+
+# Data Visualization of math SAT test scores
+```{r}
+# Install and load the 'scales' package if not already installed
+if (!requireNamespace("scales", quietly = TRUE)) {
+  install.packages("scales")
+}
+
+# Load the 'scales' package
+library(scales)
+
+# Your ggplot code with the scale_x_continuous modification
+ggplot(data = Five_State_Scores, mapping = aes(x = Year, y = Total.Math, linetype = State.Name)) +
+  geom_point() +
+  geom_smooth(mapping = aes(color = State.Name)) +
+  scale_x_continuous(breaks = pretty_breaks()) +
+  labs(title = "ND, FL, CA, TX, NY Math Scores",
+       y = "Math Test Scores")
+```
+
+# Data Visualization of verbal SAT test scores
+```{r}
+ggplot( data = Five_State_Scores, mapping = aes(x = Year, y = Total.Verbal, linetype = State.Name)) +
+        geom_smooth(mapping = aes(color = State.Name)) +
+        geom_point() +
+        scale_x_continuous(breaks = pretty_breaks()) +
+        labs(title = "ND, FL, CA, TX, NY Verbal Scores",
+             y = "Verbal Test Scores")
+```
+
+Examining the top 5 states 
+```{r}
+# Install and load the required packages if not already installed
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
+
+# Load the 'tidyverse' package
+library(tidyverse)
+
+# Create a bar chart for average math and verbal scores by state
+Five_State_Scores %>%
+  group_by(State.Name, Year) %>%
+  summarise(Avg_Math = mean(Total.Math, na.rm = TRUE),
+            Avg_Verbal = mean(Total.Verbal, na.rm = TRUE)) %>%
+  ggplot(aes(x = Year, y = Avg_Math + Avg_Verbal, fill = State.Name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Average Math and Verbal Scores by State and Year",
+       y = "Average Total Scores") +
+  theme_minimal()
+
+# Create a line graph for average math and verbal scores by state
+Five_State_Scores %>%
+  group_by(State.Name, Year) %>%
+  summarise(Avg_Math = mean(Total.Math, na.rm = TRUE),
+            Avg_Verbal = mean(Total.Verbal, na.rm = TRUE)) %>%
+  ggplot(aes(x = Year, y = Avg_Math + Avg_Verbal, color = State.Name)) +
+  geom_line(size = 1.5) +  # Adjust line thickness
+  labs(title = "Average Math and Verbal Scores by State and Year",
+       y = "Average Total Scores") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    axis.title = element_text(face = "bold", size = 14),
+    axis.text = element_text(size = 12),
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 10),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "#f0f0f0"),
+    plot.background = element_rect(fill = "#f0f0f0"),
+    legend.background = element_rect(fill = "#f0f0f0")
+  )
+```
+```{r}
+# Grouping data by Year to then calculate the average test-takers scores for each gender
+US_Scores$YearGroup <- cut(US_Scores$Year, 
+                            breaks = seq(2005, 2016, by = 1),
+                            labels = c("2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015"))
+
+# Creating the average test scores for both Male and Female test scores
+topscores <- US_Scores %>%
+  group_by(YearGroup) %>%
+  summarize(
+    Avg_Female_TestTakers = mean(Gender.Female.Test.takers, na.rm = TRUE),
+    Avg_Male_TestTakers = mean(Gender.Male.Test.takers, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+# Creating a bar chart for data visualization
+ggplot(topscores, aes(x = YearGroup)) +
+  geom_bar(aes(y = Avg_Female_TestTakers, fill = "Female"), stat = "identity", position = "dodge", width = 0.7) +
+  geom_bar(aes(y = Avg_Male_TestTakers, fill = "Male"), stat = "identity", position = "dodge", width = 0.7) +
+  labs(title = "Average Test-Takers", x = "Year Group", y = "Average Test-Takers") +
+  scale_fill_manual(values = c("Female" = "red", "Male" = "blue")) +
+  theme_minimal() +
+  geom_text(aes(x = YearGroup, y = round(Avg_Female_TestTakers), label = round(Avg_Female_TestTakers)), 
+            position = position_dodge(width = 0.7), vjust = 1.65, size = 3) +
+  geom_text(aes(x = YearGroup, y = round(Avg_Male_TestTakers), label = round(Avg_Male_TestTakers)), 
+            position = position_dodge(width = 0.7), vjust = -0.65, size = 3) +
+  scale_x_discrete(labels = c("2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015"))
+
+```
